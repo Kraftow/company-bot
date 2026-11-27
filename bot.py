@@ -60,10 +60,10 @@ async def add_company(user_id, name, niche, phone, messenger, percent):
 
 
 async def get_niches(user_id):
+    # Общий список: user_id не фильтруем, все видят одни и те же компании
     rows = await pool.fetch(
-        "SELECT MIN(niche) AS niche, COUNT(*) AS cnt FROM companies WHERE user_id = $1 "
-        "GROUP BY LOWER(niche) ORDER BY LOWER(niche)",
-        user_id,
+        "SELECT MIN(niche) AS niche, COUNT(*) AS cnt FROM companies "
+        "GROUP BY LOWER(niche) ORDER BY LOWER(niche)"
     )
     return [(r["niche"], r["cnt"]) for r in rows]
 
@@ -71,20 +71,16 @@ async def get_niches(user_id):
 async def get_companies(user_id, niche=None):
     if niche is None:
         return await pool.fetch(
-            "SELECT * FROM companies WHERE user_id = $1 ORDER BY LOWER(niche), LOWER(name)",
-            user_id,
+            "SELECT * FROM companies ORDER BY LOWER(niche), LOWER(name)"
         )
     return await pool.fetch(
-        "SELECT * FROM companies WHERE user_id = $1 AND LOWER(niche) = LOWER($2) "
-        "ORDER BY LOWER(name)",
-        user_id, niche,
+        "SELECT * FROM companies WHERE LOWER(niche) = LOWER($1) ORDER BY LOWER(name)",
+        niche,
     )
 
 
 async def delete_company(user_id, company_id):
-    await pool.execute(
-        "DELETE FROM companies WHERE id = $1 AND user_id = $2", company_id, user_id
-    )
+    await pool.execute("DELETE FROM companies WHERE id = $1", company_id)
 
 
 # ───────────────────────── Клавиатуры ─────────────────────────
